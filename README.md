@@ -35,17 +35,9 @@ Projek ini adalah contoh referensi pembuatan REST API menggunakan Go dengan Post
 
 ## Cara Menjalankan
 
-### 1. Persiapkan Database
+## Cara Menjalankan
 
-Jika menggunakan Docker:
-
-```bash
-docker run --name postgres-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=product_db -p 5432:5432 -d postgres
-```
-
-Lalu jalankan query di `migrations/001_create_products_table.up.sql` untuk membuat tabel.
-
-### 2. Konfigurasi Environment
+### 1. Inisialisasi Environment
 
 Salin `.env.example` menjadi `.env` dan sesuaikan nilainya:
 
@@ -53,17 +45,39 @@ Salin `.env.example` menjadi `.env` dan sesuaikan nilainya:
 cp .env.example .env
 ```
 
-Isi `.env`:
+### 2. Jalankan Database & Migrasi (Docker)
 
-```env
-PORT=8080
-DATABASE_URL=postgres://postgres:password@localhost:5432/product_db?sslmode=disable
-```
-
-### 3. Jalankan Aplikasi
+Gunakan Docker Compose untuk menjalankan database dan membuat tabel secara otomatis:
 
 ```bash
-go mod tidy
+# Jalankan database di background (jika belum)
+docker-compose up -d db
+
+# Jalankan migrasi untuk membuat tabel
+docker-compose run --rm migrate
+```
+
+### 3. Opsi: Menggunakan Supabase
+
+Jika ingin menggunakan Supabase, ganti `DATABASE_URL` di `.env` dengan URI dari Supabase, lalu jalankan migrasi:
+
+```bash
+docker run --rm -v $(pwd)/migrations:/migrations migrate/migrate -path=/migrations/ -database "URI_SUPABASE_ANDA" up
+```
+
+### 4. Cara Membuat Migrasi Baru
+
+Jika Anda ingin menambah tabel atau mengubah skema:
+
+```bash
+make migrate-create name=nama_migrasi
+```
+
+Lalu isi file `.up.sql` yang baru muncul di folder `migrations/`.
+
+### 5. Jalankan Aplikasi Go
+
+```bash
 go run cmd/server/main.go
 ```
 

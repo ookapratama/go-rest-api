@@ -90,6 +90,75 @@ Menyatukan semua potongan puzzle.
 
 ---
 
+## 8. Database Migrations (Membuat Tabel)
+
+Setelah Docker Postgres berjalan, Anda perlu membuat tabel. Kita menggunakan tool `golang-migrate`.
+
+### A. Jika Menggunakan Local Docker (Rekomendasi)
+
+Kita sudah mensetup container `migrate` di `docker-compose.yml`. Jalankan perintah ini di terminal:
+
+```bash
+docker-compose run --rm migrate
+```
+
+**Tujuan Perintah:**
+
+- `docker-compose run`: Menjalankan service tertentu secara mandiri.
+- `--rm`: Menghapus container setelah selesai (supaya tidak menumpuk sampah container).
+- `migrate`: Nama service di `docker-compose.yml` yang berisi konfigurasi migrasi.
+- **Hasilnya:** Semua file `.sql` di folder `/migrations` akan dieksekusi ke database Postgres Anda untuk membuat tabel.
+
+### B. Opsi: Menggunakan Supabase PostgreSQL
+
+Jika Anda lebih suka menggunakan database cloud dari **Supabase**, ikuti langkah ini:
+
+1.  **Dapatkan Connection String:**
+    - Buka dashboard Supabase.
+    - Settings -> Database.
+    - Cari **Connection String (URI)**. Pilih mode `Transaction` atau `Session`.
+2.  **Edit File `.env`:**
+    Ganti `DATABASE_URL` dengan string dari Supabase.
+    - Contoh: `DATABASE_URL=postgres://postgres:[PASSWORD]@db.xxxx.supabase.co:5432/postgres`
+3.  **Jalankan Migrasi ke Supabase:**
+    Gunakan Docker untuk mendorong tabel ke Supabase (tidak perlu install tool tambahan di laptop):
+    ```bash
+    docker run --rm -v $(pwd)/migrations:/migrations migrate/migrate -path=/migrations/ -database "ISI_DENGAN_URL_SUPABASE_ANDA" up
+    ```
+
+### C. Cara Membuat File Migrasi Baru
+
+Setiap kali Anda ingin menambah tabel baru atau mengubah struktur tabel, Anda harus membuat file migrasi baru.
+
+**Gunakan perintah ini (via Makefile):**
+
+```bash
+make migrate-create name=keterangan_migrasi
+```
+
+_(Ganti `keterangan_migrasi` sesuai kebutuhan, misal: `create_users_table` atau `add_column_to_products`)_
+
+**Penjelasan:**
+
+- Perintah ini akan menghasilkan 2 file di folder `/migrations`:
+  1.  `XXX_keterangan.up.sql`: Isi dengan kode SQL untuk **menambah/mengubah** (misal: `CREATE TABLE`).
+  2.  `XXX_keterangan.down.sql`: Isi dengan kode SQL untuk **membatalkan** (misal: `DROP TABLE`).
+- **Nomor Urut:** Tool akan otomatis memberi nomor urut (seperti `001`, `002`) agar urutan eksekusi tetap benar.
+
+---
+
+## Ringkasan Perintah Penting (Cheat Sheet)
+
+| Perintah                          | Tujuan                                            |
+| :-------------------------------- | :------------------------------------------------ |
+| `make migrate-create name=xxx`    | **Membuat** file migrasi baru (.sql).             |
+| `docker-compose up -d db`         | Menjalankan database Postgres di background.      |
+| `docker-compose run --rm migrate` | **Eksekusi** migrasi ke database (Membuat tabel). |
+| `go run cmd/server/main.go`       | Menjalankan aplikasi Go Anda.                     |
+| `docker-compose logs -f db`       | Melihat log error database jika koneksi gagal.    |
+
+---
+
 ## Tips Belajar:
 
 - **Jangan Hafalkan Code:** Hafalkan **Alur Masuk Data-nya**: `Request -> Router -> Handler -> Service -> Repository -> Database`.
